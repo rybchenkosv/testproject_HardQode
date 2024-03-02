@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Product, Lesson, StudentProductAccess, Group
+from django.contrib.auth.models import User
 
 class LessonSerializer(serializers.ModelSerializer):
     class Meta:
@@ -34,10 +35,11 @@ class AccessibleProductSerializer(serializers.ModelSerializer):
 class ProductStatsSerializer(serializers.ModelSerializer):
     total_students = serializers.SerializerMethodField()
     group_completion_percentage = serializers.SerializerMethodField()
+    percent_of_purchases = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'total_students', 'group_completion_percentage']
+        fields = ['id', 'name', 'total_students', 'group_completion_percentage', 'percent_of_purchases']
 
     def get_total_students(self, obj):
         total_students = StudentProductAccess.objects.filter(product=obj, has_access=True).count()
@@ -60,3 +62,9 @@ class ProductStatsSerializer(serializers.ModelSerializer):
             return 0
         group_completion_percentage = sum(stat) / len(stat)
         return f'{group_completion_percentage:.2f}%'
+
+    def get_percent_of_purchases(self, obj):
+        percent_of_purchases = StudentProductAccess.objects.filter(product=obj, has_access=True).count()
+        all_user = User.objects.count()
+        get_percent_of_purchases = percent_of_purchases / all_user * 100
+        return f'{get_percent_of_purchases:.2f}%'
